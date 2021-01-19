@@ -3,22 +3,8 @@
 import Foundation
 import Network
 
-enum NetworkClientError : Error {
-    case invalidState(state: NWConnection.State, expected: NWConnection.State)
-}
-
-protocol Client {
-    func connect() throws
-    func disconnect() throws
-    func send(data: Data) throws
-    func setMessageHandler(handler: ((Data) -> Void)?)
-    func setOnDisconnectHandler(handler: ((NWConnection.State, NWError?) -> Void)?)
-}
-
 class NetworkClient : Client {
-    
     private var connection: NWConnection
-    
     private var onConnectionEnd: ((NWConnection.State, NWError?) -> Void)?
     private var onMessage: ((Data) -> Void)?
     

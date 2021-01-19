@@ -8,9 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		C06997A125AB56D900EF1E26 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06997A025AB56D900EF1E26 /* main.swift */; };
-		C06997A925AB56E800EF1E26 /* client.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06997A825AB56E800EF1E26 /* client.swift */; };
-		C06997AC25AB56FA00EF1E26 /* mqtt.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06997AB25AB56FA00EF1E26 /* mqtt.swift */; };
+		C06997A925AB56E800EF1E26 /* NetworkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06997A825AB56E800EF1E26 /* NetworkClient.swift */; };
+		C06997AC25AB56FA00EF1E26 /* MqttClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06997AB25AB56FA00EF1E26 /* MqttClient.swift */; };
 		C06997AF25AB570C00EF1E26 /* MqttFormatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06997AE25AB570C00EF1E26 /* MqttFormatService.swift */; };
+		C0B537C925B769F900B2AD9E /* Client.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B537C825B769F900B2AD9E /* Client.swift */; };
+		C0B537CC25B76A1D00B2AD9E /* NetworkClientError.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B537CB25B76A1D00B2AD9E /* NetworkClientError.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -28,9 +30,11 @@
 /* Begin PBXFileReference section */
 		C069979D25AB56D900EF1E26 /* MqttListener */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MqttListener; sourceTree = BUILT_PRODUCTS_DIR; };
 		C06997A025AB56D900EF1E26 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		C06997A825AB56E800EF1E26 /* client.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = client.swift; sourceTree = "<group>"; };
-		C06997AB25AB56FA00EF1E26 /* mqtt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mqtt.swift; sourceTree = "<group>"; };
+		C06997A825AB56E800EF1E26 /* NetworkClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkClient.swift; sourceTree = "<group>"; };
+		C06997AB25AB56FA00EF1E26 /* MqttClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MqttClient.swift; sourceTree = "<group>"; };
 		C06997AE25AB570C00EF1E26 /* MqttFormatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MqttFormatService.swift; sourceTree = "<group>"; };
+		C0B537C825B769F900B2AD9E /* Client.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Client.swift; sourceTree = "<group>"; };
+		C0B537CB25B76A1D00B2AD9E /* NetworkClientError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkClientError.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,12 +67,30 @@
 		C069979F25AB56D900EF1E26 /* MqttListener */ = {
 			isa = PBXGroup;
 			children = (
+				C0B537CF25B76A6300B2AD9E /* Mqtt */,
+				C0B537C725B769D400B2AD9E /* Network */,
 				C06997A025AB56D900EF1E26 /* main.swift */,
-				C06997A825AB56E800EF1E26 /* client.swift */,
-				C06997AB25AB56FA00EF1E26 /* mqtt.swift */,
-				C06997AE25AB570C00EF1E26 /* MqttFormatService.swift */,
 			);
 			path = MqttListener;
+			sourceTree = "<group>";
+		};
+		C0B537C725B769D400B2AD9E /* Network */ = {
+			isa = PBXGroup;
+			children = (
+				C06997A825AB56E800EF1E26 /* NetworkClient.swift */,
+				C0B537C825B769F900B2AD9E /* Client.swift */,
+				C0B537CB25B76A1D00B2AD9E /* NetworkClientError.swift */,
+			);
+			path = Network;
+			sourceTree = "<group>";
+		};
+		C0B537CF25B76A6300B2AD9E /* Mqtt */ = {
+			isa = PBXGroup;
+			children = (
+				C06997AB25AB56FA00EF1E26 /* MqttClient.swift */,
+				C06997AE25AB570C00EF1E26 /* MqttFormatService.swift */,
+			);
+			path = Mqtt;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -128,9 +150,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C06997A925AB56E800EF1E26 /* client.swift in Sources */,
-				C06997AC25AB56FA00EF1E26 /* mqtt.swift in Sources */,
+				C06997A925AB56E800EF1E26 /* NetworkClient.swift in Sources */,
+				C06997AC25AB56FA00EF1E26 /* MqttClient.swift in Sources */,
 				C06997AF25AB570C00EF1E26 /* MqttFormatService.swift in Sources */,
+				C0B537C925B769F900B2AD9E /* Client.swift in Sources */,
+				C0B537CC25B76A1D00B2AD9E /* NetworkClientError.swift in Sources */,
 				C06997A125AB56D900EF1E26 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

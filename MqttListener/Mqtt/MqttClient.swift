@@ -58,6 +58,7 @@ class MqttClient {
         let payloadIndex = Int(5 + data[4]);
         
         if (data[payloadIndex] >= 0b1000_0000) {
+            // Payload contains status-code. Every status-code >= 128 indicates an error.
             print("ERROR: Error code during SUBACK: \(data[payloadIndex])")
         }
     }
