@@ -1,7 +1,8 @@
 import Foundation
 import Network;
 
-protocol Client {
+protocol Client
+{
     func connect() throws
     func disconnect() throws
     func send(data: Data) throws
