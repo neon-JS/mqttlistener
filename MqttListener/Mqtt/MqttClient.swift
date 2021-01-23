@@ -22,8 +22,7 @@ class MqttClient
         self.userName = userName
         self.password = password
 
-        self.client.setMessageHandler(handler: self.onMessage(data:))
-        self.client.setOnDisconnectHandler(handler: self.onDisconnect(state:error:))
+        self.client.setMessageHandler(handler: self.onData)
     }
 
     public func setOnMessage(handler: ((String, [Int]) -> Void)?)
@@ -31,24 +30,37 @@ class MqttClient
         self.onMessage = handler
     }
 
-    private func onMessage(data: Data) -> Void
+    private func onData(_ data: Data) -> Void
     {
-        let convertedData = MqttFormatService.dataToIntArray(data: data)
-        let controlPacketIdentifier = convertedData[0]
+        do {
+            let convertedData = MqttFormatService.dataToIntArray(data: data)
+            let messages = try MqttFormatService.extractMessagesFromData(data: convertedData)
 
-        if (controlPacketIdentifier == Mqtt.ControlPacketTypeConnAck) {
-            self.handleConnAck(data: convertedData)
-        } else if (controlPacketIdentifier == Mqtt.ControlPacketTypeSubAck) {
-            self.handleSubAck(data: convertedData)
-        } else if ((controlPacketIdentifier & Mqtt.ControlPacketIdentifierPublish) == Mqtt.ControlPacketIdentifierPublish) {
-            self.handlePublish(data: convertedData)
-        } else {
-            DebugService.log("Received unspecified message with \(data.count) bytes:")
-            DebugService.printBinaryData(MqttFormatService.dataToIntArray(data: data))
+            for message in messages {
+                self.onMqttMessage(message)
+            }
+        } catch {
+            DebugService.error("Error while handling incoming data: \(error)")
         }
     }
 
-    private func handleSubAck(data: [Int])
+    private func onMqttMessage(_ message: [Int])
+    {
+        let controlPacketIdentifier = message[0]
+
+        if (controlPacketIdentifier == Mqtt.ControlPacketTypeConnAck) {
+            self.handleConnAck(message)
+        } else if (controlPacketIdentifier == Mqtt.ControlPacketTypeSubAck) {
+            self.handleSubAck(message)
+        } else if ((controlPacketIdentifier & Mqtt.ControlPacketIdentifierPublish) == Mqtt.ControlPacketIdentifierPublish) {
+            self.handlePublish(message)
+        } else {
+            DebugService.log("Received unspecified message with \(message.count) bytes:")
+            DebugService.printBinaryData(message)
+        }
+    }
+
+    private func handleSubAck(_ data: [Int])
     {
         /*
             0b1001_0000 // SUBACK
@@ -71,7 +83,7 @@ class MqttClient
         }
     }
 
-    private func handleConnAck(data: [Int])
+    private func handleConnAck(_ data: [Int])
     {
         /*
             0b0010_0000 // Type CONNACK
@@ -99,7 +111,7 @@ class MqttClient
         }
     }
 
-    private func handlePublish(data: [Int])
+    private func handlePublish(_ data: [Int])
     {
         /*
             0b0011_DQQR // D = is duplicate (server -> client always 0), QQ = QoS, R = retain
@@ -137,12 +149,7 @@ class MqttClient
         }
     }
 
-    private func onDisconnect(state: NWConnection.State, error: NWError?) -> Void
-    {
-     //   print("Disconnected with state '\(state)' and error '\(String(describing: error))'!")
-    }
-
-    public func connect()
+    public func connect() throws
     {
         // Build connect flags
         var connectFlags = Mqtt.ConnectFlagCleanStart // Starting with a clean session. As this is just a plain listener, we won't use a will!
@@ -156,7 +163,7 @@ class MqttClient
         }
 
         var parts: [[Int]] = [
-            MqttFormatService.encodeString(value: Mqtt.ProtocolName),
+            try MqttFormatService.encodeString(Mqtt.ProtocolName),
             [
                 Mqtt.ProtocolVersion,
                 connectFlags,
@@ -167,18 +174,18 @@ class MqttClient
                 0x0000_0000, // Property-length (0 as no properties are set) but necessary for MQTT5
             ],
 
-            MqttFormatService.encodeString(value: self.clientId) // Begin of payload
+            try MqttFormatService.encodeString(self.clientId) // Begin of payload
         ]
 
         if (self.userName != nil) {
-            parts.append(MqttFormatService.encodeString(value: self.userName!))
+            try parts.append(MqttFormatService.encodeString(self.userName!))
         }
 
         if (self.password != nil) {
-            parts.append(MqttFormatService.encodeString(value: self.password!))
+            try parts.append(MqttFormatService.encodeString(self.password!))
         }
 
-        try! self.client.send(data: MqttFormatService.convertMessageToData(controlPacketType: Mqtt.ControlPacketTypeConnect, data: parts))
+        try self.client.send(data: MqttFormatService.convertMessageToData(controlPacketType: Mqtt.ControlPacketTypeConnect, data: parts))
     }
 
     public func subscribe(topic: String) throws
@@ -194,19 +201,19 @@ class MqttClient
 
                 0b0000_0000, // Properties length. As we dont use them, its 0
             ],
-            MqttFormatService.encodeString(value: topic),
+            try MqttFormatService.encodeString(topic),
             [
                 0b0000_0110, // Subscription options
             ]
         ]
-        try! self.client.send(data: MqttFormatService.convertMessageToData(controlPacketType: Mqtt.ControlPacketTypeSubscribe, data: parts))
+        try self.client.send(data: MqttFormatService.convertMessageToData(controlPacketType: Mqtt.ControlPacketTypeSubscribe, data: parts))
     }
 
     public func disconnect()
     {
         let data = Data([
             UInt8(Mqtt.ControlPacketTypeDisconnect),
-            0b0000_0000, // Remaining length
+            0b0000_0010, // Remaining length
 
             0b0000_0000, // Reason code -> normal disconnection
 

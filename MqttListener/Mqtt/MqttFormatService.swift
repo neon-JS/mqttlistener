@@ -43,10 +43,14 @@ class MqttFormatService
         return value
     }
 
-    public static func encodeString(value: String) -> [Int]
+    public static func encodeString(_ value: String) throws -> [Int]
     {
         let utf8string = value.utf8
         var bytes: [Int] = []
+
+        if (utf8string.count > Mqtt.Utf8StringMaxByteSize) {
+            throw MqttFormatError.stringMaxLengthExceeded
+        }
 
         bytes.append(utf8string.count >> 8) // Length MSB
         bytes.append(utf8string.count & 0b1111_1111) // Length LSB
@@ -87,6 +91,24 @@ class MqttFormatService
             .map { (v) -> UInt8 in UInt8(v) }
 
         return combinedData.withUnsafeBytes { Data($0) }
+    }
+
+    public static func extractMessagesFromData(data: [Int]) throws -> [[Int]]
+    {
+        var remainingLengthEndIndex = 1
+        while data[remainingLengthEndIndex] & Mqtt.VariableByteIntegerContinuationBit == Mqtt.VariableByteIntegerContinuationBit {
+            remainingLengthEndIndex += 1
+        }
+
+        let lastByteIndex = try self.decodeVariableByteInteger(values: Array(data[1...remainingLengthEndIndex])) + remainingLengthEndIndex
+        let currentMessage = Array(data[0..<lastByteIndex + 1])
+        var messages = [currentMessage]
+
+        if (lastByteIndex + 1 < data.count) {
+            messages += try self.extractMessagesFromData(data: Array(data[lastByteIndex + 1..<data.count]))
+        }
+
+        return messages
     }
 
     public static func generateClientId() -> String

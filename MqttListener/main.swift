@@ -24,7 +24,7 @@ func main()
         }
 
         try networkClient.connect()
-        mqttClient.connect()
+        try mqttClient.connect()
 
         for topic in config.topics {
             try mqttClient.subscribe(topic: topic)
