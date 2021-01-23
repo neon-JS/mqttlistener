@@ -2,9 +2,9 @@ import Foundation
 
 class MqttFormatService
 {
-    public static func encodeVariableByteInteger(value: Int) throws -> [Int]
+    public static func encodeVariableByteInteger(_ value: Int) throws -> [Int]
     {
-        if (value > 0xFFFF_FF7F) {
+        if (value > Mqtt.VariableIntegerMaxSize) {
             throw MqttFormatError.variableIntegerOverflow
         }
 
@@ -12,12 +12,12 @@ class MqttFormatService
         var handledValue = value
 
         while handledValue > 0 {
-            var leastSignificantByte = handledValue % 0b1000_0000 // Get LSB
-            handledValue = handledValue >> 7 // Remove LSB from value
+            var leastSignificantByte = handledValue % Mqtt.VariableByteIntegerContinuationBit   // Get LSB (aka "the next seven bits")
+            handledValue = handledValue >> 7                                                    // Remove LSB from value
 
             if (handledValue > 0) {
                 // For every byte that is not the last one (because there's a value left)
-                leastSignificantByte = leastSignificantByte | 0b1000_0000 // Add "continuation-bit"
+                leastSignificantByte = leastSignificantByte | Mqtt.VariableByteIntegerContinuationBit
             }
 
             bytes.append(leastSignificantByte)
@@ -26,7 +26,7 @@ class MqttFormatService
         return bytes
     }
 
-    public static func decodeVariableByteInteger(values: [Int]) throws -> Int
+    public static func decodeVariableByteInteger(_ values: [Int]) throws -> Int
     {
         if (values.count > 4) {
             throw MqttFormatError.variableIntegerOverflow
@@ -36,7 +36,7 @@ class MqttFormatService
         var value = 0
 
         for byte in values {
-            value += (byte & 0b0111_1111) * multiplier
+            value += (byte & Mqtt.VariableByteIntegerValueBits) * multiplier
             multiplier *= 0b1000_0000
         }
 
@@ -62,7 +62,7 @@ class MqttFormatService
         return bytes
     }
     
-    public static func decodeString(bytes: [Int]) -> String
+    public static func decodeString(_ bytes: [Int]) -> String
     {
         let chars = bytes[2..<bytes.count].map { (byte) -> Character in
             Character(UnicodeScalar(byte) ?? "?" as Unicode.Scalar)
@@ -71,7 +71,7 @@ class MqttFormatService
         return String(chars)
     }
 
-    public static func dataToIntArray(data: Data) -> [Int]
+    public static func dataToIntArray(_ data: Data) -> [Int]
     {
         return data.map { (value) -> Int in
             Int(value)
@@ -84,7 +84,7 @@ class MqttFormatService
 
         var convertedData = data
         convertedData.insert([ controlPacketType ], at: 0)
-        convertedData.insert(try self.encodeVariableByteInteger(value: dataLength), at: 1)
+        convertedData.insert(try self.encodeVariableByteInteger(dataLength), at: 1)
 
         let combinedData = convertedData
             .reduce([]) { (list, current) -> [Int] in list + current }
@@ -100,7 +100,7 @@ class MqttFormatService
             remainingLengthEndIndex += 1
         }
 
-        let lastByteIndex = try self.decodeVariableByteInteger(values: Array(data[1...remainingLengthEndIndex])) + remainingLengthEndIndex
+        let lastByteIndex = try self.decodeVariableByteInteger(Array(data[1...remainingLengthEndIndex])) + remainingLengthEndIndex
         let currentMessage = Array(data[0..<lastByteIndex + 1])
         var messages = [currentMessage]
 
@@ -114,10 +114,9 @@ class MqttFormatService
     public static func generateClientId() -> String
     {
         var clientId = "MqttListener"
-        let validChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-        for _ in clientId.count..<23 {
-            clientId.append(validChars.randomElement()!)
+        for _ in clientId.count..<Mqtt.ClientIdMaxLength {
+            clientId.append(Mqtt.ClientIdValidChars.randomElement()!)
         }
 
         return clientId

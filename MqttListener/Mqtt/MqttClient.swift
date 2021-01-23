@@ -8,7 +8,7 @@ class MqttClient
     private let userName: String?
     private let password: String?
 
-    private var onMessage: ((String, [Int]) -> Void)?
+    private var onMessageHandler: ((String, [Int]) -> Void)?
 
     convenience init(client: Client, clientId: String)
     {
@@ -22,18 +22,18 @@ class MqttClient
         self.userName = userName
         self.password = password
 
-        self.client.setMessageHandler(handler: self.onData)
+        self.client.setOnDataHandler(self.onData)
     }
 
-    public func setOnMessage(handler: ((String, [Int]) -> Void)?)
+    public func setOnMessageHandler(_ handler: ((String, [Int]) -> Void)?)
     {
-        self.onMessage = handler
+        self.onMessageHandler = handler
     }
 
     private func onData(_ data: Data) -> Void
     {
         do {
-            let convertedData = MqttFormatService.dataToIntArray(data: data)
+            let convertedData = MqttFormatService.dataToIntArray(data)
             let messages = try MqttFormatService.extractMessagesFromData(data: convertedData)
 
             for message in messages {
@@ -141,11 +141,11 @@ class MqttClient
             dataStart += 2
         }
 
-        let topic = MqttFormatService.decodeString(bytes: Array(data[2..<topicLength + 4]))
+        let topic = MqttFormatService.decodeString(Array(data[2..<topicLength + 4]))
         let payload = Array(data[dataStart..<data.count])
 
-        if (self.onMessage != nil) {
-            self.onMessage!(topic, payload)
+        if (self.onMessageHandler != nil) {
+            self.onMessageHandler!(topic, payload)
         }
     }
 
@@ -185,7 +185,7 @@ class MqttClient
             try parts.append(MqttFormatService.encodeString(self.password!))
         }
 
-        try self.client.send(data: MqttFormatService.convertMessageToData(controlPacketType: Mqtt.ControlPacketTypeConnect, data: parts))
+        try self.client.send(MqttFormatService.convertMessageToData(controlPacketType: Mqtt.ControlPacketTypeConnect, data: parts))
     }
 
     public func subscribe(topic: String) throws
@@ -206,7 +206,7 @@ class MqttClient
                 0b0000_0110, // Subscription options
             ]
         ]
-        try self.client.send(data: MqttFormatService.convertMessageToData(controlPacketType: Mqtt.ControlPacketTypeSubscribe, data: parts))
+        try self.client.send(MqttFormatService.convertMessageToData(controlPacketType: Mqtt.ControlPacketTypeSubscribe, data: parts))
     }
 
     public func disconnect()
@@ -215,12 +215,12 @@ class MqttClient
             UInt8(Mqtt.ControlPacketTypeDisconnect),
             0b0000_0010, // Remaining length
 
-            0b0000_0000, // Reason code -> normal disconnection
+            UInt8(Mqtt.DisconnectionReasonCodeNormal), // Reason code -> normal disconnection
 
             0b0000_0000, // Properties length (empty, therefore 0)
         ])
 
-        try! self.client.send(data: data)
+        try! self.client.send(data)
         try! self.client.disconnect()
     }
 }

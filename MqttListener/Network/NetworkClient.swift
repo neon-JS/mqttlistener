@@ -6,13 +6,13 @@ import Network
 class NetworkClient : Client
 {
     private var connection: NWConnection
-    private var onConnectionEnd: ((NWConnection.State, NWError?) -> Void)?
-    private var onMessage: ((Data) -> Void)?
+    private var onDisconnectHandler: ((NWConnection.State, NWError?) -> Void)?
+    private var onDataHandler: ((Data) -> Void)?
 
     init(host: NWEndpoint.Host, port: NWEndpoint.Port)
     {
         self.connection = NWConnection(host: host, port: port, using: NWParameters.tcp)
-        self.connection.stateUpdateHandler = self.handleStateChange(state:)
+        self.connection.stateUpdateHandler = self.handleStateChange
         self.handleIncoming()
     }
 
@@ -33,7 +33,7 @@ class NetworkClient : Client
         self.terminate(error: nil)
     }
 
-    public func send(data: Data) throws
+    public func send(_ data: Data) throws
     {
         self.connection.send(
             content: data,
@@ -45,17 +45,17 @@ class NetworkClient : Client
         }))
     }
 
-    public func setMessageHandler(handler: ((Data) -> Void)?)
+    public func setOnDataHandler(_ handler: ((Data) -> Void)?)
     {
-        self.onMessage = handler
+        self.onDataHandler = handler
     }
 
-    public func setOnDisconnectHandler(handler: ((NWConnection.State, NWError?) -> Void)?)
+    public func setOnDisconnectHandler(_ handler: ((NWConnection.State, NWError?) -> Void)?)
     {
-        self.onConnectionEnd = handler
+        self.onDisconnectHandler = handler
     }
 
-    private func handleStateChange(state: NWConnection.State)
+    private func handleStateChange(_ state: NWConnection.State)
     {
         switch state {
         case .waiting(let error):
@@ -90,18 +90,18 @@ class NetworkClient : Client
                     return
                 }
 
-                if let data = data, !data.isEmpty, self.onMessage != nil {
-                    self.onMessage!(data)
+                if let data = data, !data.isEmpty, self.onDataHandler != nil {
+                    self.onDataHandler!(data)
                     return
                 }
 
                 if isComplete {
-                    self.terminate(error: nil)
+                    self.terminate()
                 }
         })
     }
 
-    private func terminate(error: NWError?)
+    private func terminate(error: NWError? = nil)
     {
         let disconnectionState = self.connection.state
 
@@ -110,8 +110,8 @@ class NetworkClient : Client
             self.connection.cancel()
         }
 
-        if self.onConnectionEnd != nil {
-            self.onConnectionEnd!(disconnectionState, error)
+        if self.onDisconnectHandler != nil {
+            self.onDisconnectHandler!(disconnectionState, error)
         }
 
         if error != nil && disconnectionState != NWConnection.State.cancelled {

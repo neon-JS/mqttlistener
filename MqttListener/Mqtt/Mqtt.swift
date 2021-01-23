@@ -16,7 +16,15 @@ class Mqtt
     public static let ConnectFlagCleanStart  = 0b0000_0010
     public static let ConnectFlagUseUserName = 0b1000_0000
     public static let ConnectFlagUsePassword = 0b0100_0000
+
+    public static let VariableIntegerMaxSize = 0xFFFF_FF7F
     public static let Utf8StringMaxByteSize  = 0b1111_1111_1111_1111
 
     public static let VariableByteIntegerContinuationBit = 0b1000_0000
+    public static let VariableByteIntegerValueBits       = 0b0111_1111
+
+    public static let ClientIdValidChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    public static let ClientIdMaxLength  = 23
+
+    public static let DisconnectionReasonCodeNormal = 0b0000_0000
 }

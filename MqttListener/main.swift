@@ -15,7 +15,7 @@ func main()
 
         let clientId = MqttFormatService.generateClientId()
         let mqttClient = MqttClient(client: networkClient, clientId: clientId, userName: config.userName, password: config.password)
-        mqttClient.setOnMessage { (topic, data) in
+        mqttClient.setOnMessageHandler { (topic, data) in
             let dataString = String(data.map { (byte) -> Character in
                 Character(UnicodeScalar(byte) ?? "?" as Unicode.Scalar)
             })
