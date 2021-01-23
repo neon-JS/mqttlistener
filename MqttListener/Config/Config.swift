@@ -7,4 +7,5 @@ struct Config : Codable
     public let userName: String?
     public let password: String?
     public let topics: [String]
+    public let debug: Bool
 }

@@ -1,16 +1,11 @@
 import Foundation
 
-enum MqttFormatError : Error
-{
-    case variableIntegerOverflowError
-}
-
 class MqttFormatService
 {
     public static func encodeVariableByteInteger(value: Int) throws -> [Int]
     {
         if (value > 0xFFFF_FF7F) {
-            throw MqttFormatError.variableIntegerOverflowError
+            throw MqttFormatError.variableIntegerOverflow
         }
 
         var bytes: [Int] = []
@@ -34,7 +29,7 @@ class MqttFormatService
     public static func decodeVariableByteInteger(values: [Int]) throws -> Int
     {
         if (values.count > 4) {
-            throw MqttFormatError.variableIntegerOverflowError
+            throw MqttFormatError.variableIntegerOverflow
         }
 
         var multiplier = 1

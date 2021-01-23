@@ -115,7 +115,7 @@ class NetworkClient : Client
         }
 
         if error != nil && disconnectionState != NWConnection.State.cancelled {
-            print("Connection terminated with error: '\(String(describing: error))'!")
+            DebugService.error("Connection terminated with error: '\(error!)'")
         }
     }
 }

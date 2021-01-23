@@ -7,6 +7,8 @@ func main()
         let configProvider = ConfigProvider()
         let config = try configProvider.provideConfig()
 
+        DebugService.debugLogsActive = config.debug
+
         let host: NWEndpoint.Host = NWEndpoint.Host(config.host)
         let port: NWEndpoint.Port = NWEndpoint.Port(rawValue: UInt16(config.port))!
         let networkClient = NetworkClient(host: host, port: port)

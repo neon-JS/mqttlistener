@@ -43,17 +43,13 @@ class MqttClient
         } else if ((controlPacketIdentifier & Mqtt.ControlPacketIdentifierPublish) == Mqtt.ControlPacketIdentifierPublish) {
             self.handlePublish(data: convertedData)
         } else {
-            print("DEBUG: Received unspecified message with \(data.count) bytes:")
-            for c in data {
-                print(c)
-            }
+            DebugService.log("Received unspecified message with \(data.count) bytes:")
+            DebugService.printBinaryData(MqttFormatService.dataToIntArray(data: data))
         }
     }
 
     private func handleSubAck(data: [Int])
     {
-        print("DEBUG: Got SUBACK")
-
         /*
             0b1001_0000 // SUBACK
             0bXXXX_XXXX // Remaining length
@@ -66,17 +62,17 @@ class MqttClient
             0bXXXX_XXXX // Payload
          */
 
-        let payloadIndex = Int(5 + data[4])
+        DebugService.log("Got SUBACK")
 
+        let payloadIndex = Int(5 + data[4])
         if (data[payloadIndex] >= 0b1000_0000) {
             // Payload contains status-code. Every status-code >= 128 indicates an error.
-            print("ERROR: Error code during SUBACK: \(data[payloadIndex])")
+            DebugService.error("Status code indicates an error during SUBACK. Code: \(data[payloadIndex])")
         }
     }
 
     private func handleConnAck(data: [Int])
     {
-        print("DEBUG: Got CONNACK")
         /*
             0b0010_0000 // Type CONNACK
             0bXXXX_XXXX // Remaining length
@@ -92,20 +88,19 @@ class MqttClient
             0b0000_1001 // 10 (LSB)
          */
 
+        DebugService.log("Got CONNACK")
+
         if (data[2] != 0b0000_0000) {
-            print("DEBUG: Using resumed session!")
-        } else {
-            print("DEBUG: Using clean session!")
+            DebugService.log("Using resumed session during CONNACK")
         }
 
         if (data[3] != 0b0000_0000) {
-            print("ERROR: Status ERROR! '\(data[3])'")
+            DebugService.error("Status code indicates an error during CONNACK. Code: \(data[3])")
         }
     }
 
     private func handlePublish(data: [Int])
     {
-        print("DEBUG: Got PUBLISH")
         /*
             0b0011_DQQR // D = is duplicate (server -> client always 0), QQ = QoS, R = retain
             0bXXXX_XXXX // Remaining length
@@ -124,9 +119,11 @@ class MqttClient
             ...
          */
 
-        let topicLength = Int(data[2] << 8 + data[3])
+        DebugService.log("Got PUBLISH")
 
+        let topicLength = Int(data[2] << 8 + data[3])
         var dataStart = topicLength + 4
+
         if (data[0] & 0b0000_0110 != 0) {
             // QoS > 0
             dataStart += 2
