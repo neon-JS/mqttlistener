@@ -8,7 +8,7 @@ class IntegerEncoder
             throw MqttFormatError.variableIntegerOverflow
         }
 
-        var bytes: [Int] = []
+        var bytes: MessageData = []
         var handledValue = value
 
         while handledValue > 0 {
@@ -28,18 +28,23 @@ class IntegerEncoder
 
     public static func decodeVariableByteInteger(_ data: MessageData) throws -> Int
     {
-        if (data.count > 4) {
-            throw MqttFormatError.variableIntegerOverflow
-        }
-
         var multiplier = 1
         var value = 0
 
-        for byte in data {
+        for (index, byte) in data.enumerated() {
+            if (index > 3) {
+                throw MqttFormatError.variableIntegerOverflow
+            }
+
             value += (byte & Mqtt.VariableByteIntegerValueBits) * multiplier
             multiplier *= 0b1000_0000
+
+            if(byte & Mqtt.VariableByteIntegerContinuationBit == 0)
+            {
+                break;
+            }
         }
 
-        return value
+        return value;
     }
 }

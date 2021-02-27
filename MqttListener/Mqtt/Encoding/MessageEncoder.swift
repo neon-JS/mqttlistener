@@ -22,19 +22,35 @@ class MessageEncoder
 
     public static func extractMessagesFromData(_ data: MessageData) throws -> [Message]
     {
-        var remainingLengthEndIndex = 1
-        while data[remainingLengthEndIndex] & Mqtt.VariableByteIntegerContinuationBit == Mqtt.VariableByteIntegerContinuationBit {
-            remainingLengthEndIndex += 1
+        if (data.count <= 1) {
+            throw MqttFormatError.invalidMessageData
         }
 
-        let lastByteIndex = try IntegerEncoder.decodeVariableByteInteger(Array(data[1...remainingLengthEndIndex])) + remainingLengthEndIndex
-        let currentMessage = Array(data[0..<lastByteIndex + 1])
-        var messages = [currentMessage]
+        let firstMessageEndIndex = try MessageEncoder.getEncodedIntegerLength(data[1...]) + IntegerEncoder.decodeVariableByteInteger(Array(data[1...]));
+        if (data.count <= firstMessageEndIndex) {
+            throw MqttFormatError.invalidMessageData
+        }
 
-        if (lastByteIndex + 1 < data.count) {
-            messages += try self.extractMessagesFromData(Array(data[lastByteIndex + 1..<data.count]))
+        let firstMessage = Array(data[0...firstMessageEndIndex])
+        var messages = [firstMessage]
+
+        // Check for more messages
+        let nextMessageStartIndex = firstMessageEndIndex + 1;
+        if (data.count > nextMessageStartIndex) {
+            messages += try self.extractMessagesFromData(Array(data[nextMessageStartIndex...]))
         }
 
         return messages
+    }
+
+    private static func getEncodedIntegerLength(_ data: ArraySlice<Int>) throws -> Int
+    {
+        for (index, byte) in data.enumerated() {
+            if (byte & Mqtt.VariableByteIntegerContinuationBit == 0) {
+                return index + 1;
+            }
+        }
+
+        throw MqttFormatError.invalidVariableIntegerData
     }
 }

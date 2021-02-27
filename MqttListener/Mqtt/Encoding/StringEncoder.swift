@@ -15,15 +15,28 @@ class StringEncoder
         bytes.append(utf8string.count & 0b1111_1111) // Length LSB
 
         for char in utf8string {
+            if (char == 0x00) {
+                throw MqttFormatError.invalidStringData
+            }
+
             bytes.append(Int(char))
         }
 
         return bytes
     }
 
-    public static func decodeString(_ bytes: MessageData) -> String
+    public static func decodeString(_ bytes: MessageData) throws -> String
     {
-        let chars = bytes[2..<bytes.count].map { (byte) -> Character in
+        if (bytes.count < 2) {
+            throw MqttFormatError.invalidStringData
+        }
+
+        let lastStringDataIndex = (bytes[0] << 8) + bytes[1] + 1; // Offset = 2, but remove 1 because of zero-indexing
+        if (bytes.count <= lastStringDataIndex) {
+            throw MqttFormatError.invalidStringData
+        }
+
+        let chars = bytes[2...lastStringDataIndex].map { (byte) -> Character in
             Character(UnicodeScalar(byte)!)
         }
 

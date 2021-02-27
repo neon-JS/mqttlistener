@@ -132,6 +132,11 @@ class MqttClient
 
     private func onMqttMessage(_ message: Message)
     {
+        if (message.count == 0) {
+            DebugService.log("Discarding empty message!")
+            return
+        }
+
         let controlPacketIdentifier = message[0]
 
         if (controlPacketIdentifier == Mqtt.ControlPacketTypeConnAck) {
@@ -162,7 +167,20 @@ class MqttClient
 
         DebugService.log("Got SUBACK")
 
+        if (data.count < 5) {
+            DebugService.log("Discarding SUBACK as message seems to be malformed.")
+            DebugService.printBinaryData(data)
+            return
+        }
+
         let payloadIndex = Int(5 + data[4])
+
+        if (data.count <= payloadIndex) {
+            DebugService.log("Discarding SUBACK as message seems to be malformed.")
+            DebugService.printBinaryData(data)
+            return
+        }
+
         if (data[payloadIndex] >= 0b1000_0000) {
             // Payload contains status-code. Every status-code >= 128 indicates an error.
             DebugService.error("Status code indicates an error during SUBACK. Code: \(data[payloadIndex])")
@@ -187,6 +205,12 @@ class MqttClient
          */
 
         DebugService.log("Got CONNACK")
+
+        if (data.count < 4) {
+            DebugService.log("Discarding CONNACK as message seems to be malformed.")
+            DebugService.printBinaryData(data)
+            return
+        }
 
         if (data[2] != 0b0000_0000) {
             DebugService.log("Using resumed session during CONNACK")
@@ -219,19 +243,35 @@ class MqttClient
 
         DebugService.log("Got PUBLISH")
 
-        let topicLength = Int(data[2] << 8 + data[3])
-        var dataStart = topicLength + 4
+        if (data.count < 4) {
+            DebugService.log("Discarding PUBLISH as message seems to be malformed.")
+            DebugService.printBinaryData(data)
+            return
+        }
 
+        var dataStart = Int(data[2] << 8 + data[3]) + 4
         if (data[0] & 0b0000_0110 != 0) {
             // QoS > 0
             dataStart += 2
         }
 
-        let topic = StringEncoder.decodeString(Array(data[2..<topicLength + 4]))
-        let payload = Array(data[dataStart..<data.count])
+        if (data.count <= dataStart) {
+            DebugService.log("Discarding PUBLISH as message seems to be malformed.")
+            DebugService.printBinaryData(data)
+            return
+        }
 
-        if (self.onMessageHandler != nil) {
-            self.onMessageHandler!(topic, payload)
+        do {
+            let topic = try StringEncoder.decodeString(Array(data[2...]))
+            let payload = Array(data[dataStart...])
+
+            if (self.onMessageHandler != nil) {
+                self.onMessageHandler!(topic, payload)
+            }
+        } catch MqttFormatError.invalidStringData {
+            DebugService.log("Could not handle message as data is not decodable!")
+        } catch {
+            DebugService.error(error.localizedDescription)
         }
     }
 
