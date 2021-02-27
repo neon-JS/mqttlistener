@@ -13,8 +13,19 @@ func main()
         let port: NWEndpoint.Port = NWEndpoint.Port(rawValue: UInt16(config.port))!
         let networkClient = NetworkClient(host: host, port: port)
 
+        let parserFactory = ParserFactory.instance
+        let messageConverter = MessageConverter(parserFactory.getIntegerEncoder())
+
         let clientId = MqttClient.generateClientId()
-        let mqttClient = MqttClient(client: networkClient, clientId: clientId, userName: config.userName, password: config.password)
+        let mqttClient = MqttClient(
+            parserFactory,
+            messageConverter,
+            networkClient,
+            clientId: clientId,
+            userName: config.userName,
+            password: config.password
+        )
+        
         mqttClient.setOnMessageHandler { (topic, data) in
             let dataString = String(data.map { (byte) -> Character in
                 Character(UnicodeScalar(byte) ?? "?" as Unicode.Scalar)

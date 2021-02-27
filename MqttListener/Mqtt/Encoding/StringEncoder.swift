@@ -1,8 +1,28 @@
 import Foundation
 
-class StringEncoder
+class StringEncoder : Encoder
 {
-    public static func encodeString(_ value: String) throws -> MessageData
+    typealias T = String
+
+    public func decode(_ data: MessageData) throws -> String
+    {
+        if (data.count < 2) {
+            throw MqttFormatError.invalidStringData
+        }
+
+        let lastStringDataIndex = (data[0] << 8) + data[1] + 1 // Offset = 2, but remove 1 because of zero-indexing
+        if (data.count <= lastStringDataIndex) {
+            throw MqttFormatError.invalidStringData
+        }
+
+        let chars = data[2...lastStringDataIndex].map { (byte) -> Character in
+            Character(UnicodeScalar(byte)!)
+        }
+
+        return String(chars)
+    }
+
+    public func encode(_ value: String) throws -> MessageData
     {
         let utf8string = value.utf8
         var bytes: MessageData = []
@@ -25,21 +45,12 @@ class StringEncoder
         return bytes
     }
 
-    public static func decodeString(_ bytes: MessageData) throws -> String
+    public func getEncodedLength(_ data: MessageData) throws -> Int
     {
-        if (bytes.count < 2) {
+        if (data.count < 2) {
             throw MqttFormatError.invalidStringData
         }
 
-        let lastStringDataIndex = (bytes[0] << 8) + bytes[1] + 1; // Offset = 2, but remove 1 because of zero-indexing
-        if (bytes.count <= lastStringDataIndex) {
-            throw MqttFormatError.invalidStringData
-        }
-
-        let chars = bytes[2...lastStringDataIndex].map { (byte) -> Character in
-            Character(UnicodeScalar(byte)!)
-        }
-
-        return String(chars)
+        return (data[0] << 8) + data[1] + 2
     }
 }

@@ -1,8 +1,10 @@
 import Foundation
 
-class IntegerEncoder
+class IntegerEncoder : Encoder
 {
-    public static func encodeVariableByteInteger(_ value: Int) throws -> MessageData
+    typealias T = Int
+
+    public func encode(_ value: Int) throws -> MessageData
     {
         if (value > Mqtt.VariableIntegerMaxSize) {
             throw MqttFormatError.variableIntegerOverflow
@@ -26,7 +28,7 @@ class IntegerEncoder
         return bytes
     }
 
-    public static func decodeVariableByteInteger(_ data: MessageData) throws -> Int
+    public func decode(_ data: MessageData) throws -> Int
     {
         var multiplier = 1
         var value = 0
@@ -41,10 +43,21 @@ class IntegerEncoder
 
             if(byte & Mqtt.VariableByteIntegerContinuationBit == 0)
             {
-                break;
+                break
             }
         }
 
-        return value;
+        return value
+    }
+
+    public func getEncodedLength(_ data: MessageData) throws -> Int
+    {
+        for (index, byte) in data.enumerated() {
+            if (byte & Mqtt.VariableByteIntegerContinuationBit == 0) {
+                return index + 1
+            }
+        }
+
+        throw MqttFormatError.invalidVariableIntegerData
     }
 }

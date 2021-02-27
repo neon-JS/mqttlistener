@@ -1,5 +1,5 @@
 import Foundation
-import Network;
+import Network
 
 enum NetworkClientError : Error
 {
