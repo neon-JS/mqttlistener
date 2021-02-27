@@ -11,14 +11,15 @@
 		C06997A125AB56D900EF1E26 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06997A025AB56D900EF1E26 /* main.swift */; };
 		C06997A925AB56E800EF1E26 /* NetworkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06997A825AB56E800EF1E26 /* NetworkClient.swift */; };
 		C06997AC25AB56FA00EF1E26 /* MqttClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06997AB25AB56FA00EF1E26 /* MqttClient.swift */; };
-		C06997AF25AB570C00EF1E26 /* MqttFormatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06997AE25AB570C00EF1E26 /* MqttFormatService.swift */; };
-		C09F3D3125BAAC2000200962 /* MqttError.swift in Sources */ = {isa = PBXBuildFile; fileRef = C09F3D3025BAAC2000200962 /* MqttError.swift */; };
+		C06997AF25AB570C00EF1E26 /* MessageEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06997AE25AB570C00EF1E26 /* MessageEncoder.swift */; };
 		C0B537C925B769F900B2AD9E /* Client.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B537C825B769F900B2AD9E /* Client.swift */; };
 		C0B537CC25B76A1D00B2AD9E /* NetworkClientError.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B537CB25B76A1D00B2AD9E /* NetworkClientError.swift */; };
 		C0B818C725B957AD00CBC4E8 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B818C625B957AD00CBC4E8 /* Config.swift */; };
 		C0B818CA25B957FE00CBC4E8 /* ConfigProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B818C925B957FE00CBC4E8 /* ConfigProvider.swift */; };
 		C0B818CD25B9593300CBC4E8 /* FileError.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0B818CC25B9593300CBC4E8 /* FileError.swift */; };
 		C0E4026A25B8D1FE009BDCF6 /* Mqtt.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E4026925B8D1FE009BDCF6 /* Mqtt.swift */; };
+		C0EFD8BE25EA4305009F0FBB /* StringEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0EFD8BD25EA4305009F0FBB /* StringEncoder.swift */; };
+		C0EFD8C225EA43A1009F0FBB /* IntegerEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0EFD8C125EA43A1009F0FBB /* IntegerEncoder.swift */; };
 		C0FB2B9C25BC083800659895 /* DebugService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FB2B9B25BC083800659895 /* DebugService.swift */; };
 		C0FB2BA725BC1D5C00659895 /* MqttFormatError.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FB2BA625BC1D5C00659895 /* MqttFormatError.swift */; };
 /* End PBXBuildFile section */
@@ -41,8 +42,7 @@
 		C06997A025AB56D900EF1E26 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		C06997A825AB56E800EF1E26 /* NetworkClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkClient.swift; sourceTree = "<group>"; };
 		C06997AB25AB56FA00EF1E26 /* MqttClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MqttClient.swift; sourceTree = "<group>"; };
-		C06997AE25AB570C00EF1E26 /* MqttFormatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MqttFormatService.swift; sourceTree = "<group>"; };
-		C09F3D3025BAAC2000200962 /* MqttError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MqttError.swift; sourceTree = "<group>"; };
+		C06997AE25AB570C00EF1E26 /* MessageEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageEncoder.swift; sourceTree = "<group>"; };
 		C0B537C825B769F900B2AD9E /* Client.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Client.swift; sourceTree = "<group>"; };
 		C0B537CB25B76A1D00B2AD9E /* NetworkClientError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkClientError.swift; sourceTree = "<group>"; };
 		C0B818C325B9577200CBC4E8 /* config.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = config.json; path = MqttListener/config.json; sourceTree = SOURCE_ROOT; };
@@ -50,6 +50,8 @@
 		C0B818C925B957FE00CBC4E8 /* ConfigProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigProvider.swift; sourceTree = "<group>"; };
 		C0B818CC25B9593300CBC4E8 /* FileError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileError.swift; sourceTree = "<group>"; };
 		C0E4026925B8D1FE009BDCF6 /* Mqtt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mqtt.swift; sourceTree = "<group>"; };
+		C0EFD8BD25EA4305009F0FBB /* StringEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringEncoder.swift; sourceTree = "<group>"; };
+		C0EFD8C125EA43A1009F0FBB /* IntegerEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegerEncoder.swift; sourceTree = "<group>"; };
 		C0FB2B9B25BC083800659895 /* DebugService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugService.swift; sourceTree = "<group>"; };
 		C0FB2BA625BC1D5C00659895 /* MqttFormatError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MqttFormatError.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -107,11 +109,10 @@
 		C0B537CF25B76A6300B2AD9E /* Mqtt */ = {
 			isa = PBXGroup;
 			children = (
+				C0EFD8D225EA46A4009F0FBB /* Error */,
+				C0EFD8CE25EA4595009F0FBB /* Encoding */,
 				C06997AB25AB56FA00EF1E26 /* MqttClient.swift */,
-				C06997AE25AB570C00EF1E26 /* MqttFormatService.swift */,
 				C0E4026925B8D1FE009BDCF6 /* Mqtt.swift */,
-				C09F3D3025BAAC2000200962 /* MqttError.swift */,
-				C0FB2BA625BC1D5C00659895 /* MqttFormatError.swift */,
 			);
 			path = Mqtt;
 			sourceTree = "<group>";
@@ -124,6 +125,24 @@
 				C0B818CC25B9593300CBC4E8 /* FileError.swift */,
 			);
 			path = Config;
+			sourceTree = "<group>";
+		};
+		C0EFD8CE25EA4595009F0FBB /* Encoding */ = {
+			isa = PBXGroup;
+			children = (
+				C06997AE25AB570C00EF1E26 /* MessageEncoder.swift */,
+				C0EFD8BD25EA4305009F0FBB /* StringEncoder.swift */,
+				C0EFD8C125EA43A1009F0FBB /* IntegerEncoder.swift */,
+			);
+			path = Encoding;
+			sourceTree = "<group>";
+		};
+		C0EFD8D225EA46A4009F0FBB /* Error */ = {
+			isa = PBXGroup;
+			children = (
+				C0FB2BA625BC1D5C00659895 /* MqttFormatError.swift */,
+			);
+			path = Error;
 			sourceTree = "<group>";
 		};
 		C0FB2B9A25BC082A00659895 /* Debug */ = {
@@ -193,15 +212,16 @@
 			files = (
 				C0E4026A25B8D1FE009BDCF6 /* Mqtt.swift in Sources */,
 				C0FB2B9C25BC083800659895 /* DebugService.swift in Sources */,
-				C09F3D3125BAAC2000200962 /* MqttError.swift in Sources */,
 				C06997A925AB56E800EF1E26 /* NetworkClient.swift in Sources */,
 				C06997AC25AB56FA00EF1E26 /* MqttClient.swift in Sources */,
-				C06997AF25AB570C00EF1E26 /* MqttFormatService.swift in Sources */,
+				C0EFD8BE25EA4305009F0FBB /* StringEncoder.swift in Sources */,
+				C06997AF25AB570C00EF1E26 /* MessageEncoder.swift in Sources */,
 				C0B537C925B769F900B2AD9E /* Client.swift in Sources */,
 				C0B818C725B957AD00CBC4E8 /* Config.swift in Sources */,
 				C0B818CA25B957FE00CBC4E8 /* ConfigProvider.swift in Sources */,
 				C0B537CC25B76A1D00B2AD9E /* NetworkClientError.swift in Sources */,
 				C06997A125AB56D900EF1E26 /* main.swift in Sources */,
+				C0EFD8C225EA43A1009F0FBB /* IntegerEncoder.swift in Sources */,
 				C0FB2BA725BC1D5C00659895 /* MqttFormatError.swift in Sources */,
 				C0B818CD25B9593300CBC4E8 /* FileError.swift in Sources */,
 			);

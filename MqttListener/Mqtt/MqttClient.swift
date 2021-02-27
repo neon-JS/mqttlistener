@@ -8,7 +8,7 @@ class MqttClient
     private let userName: String?
     private let password: String?
 
-    private var onMessageHandler: ((String, [Int]) -> Void)?
+    private var onMessageHandler: ((String, Message) -> Void)?
 
     convenience init(client: Client, clientId: String)
     {
@@ -25,16 +25,102 @@ class MqttClient
         self.client.setOnDataHandler(self.onData)
     }
 
-    public func setOnMessageHandler(_ handler: ((String, [Int]) -> Void)?)
+    public func setOnMessageHandler(_ handler: ((String, Message) -> Void)?)
     {
         self.onMessageHandler = handler
+    }
+
+    public func connect() throws
+    {
+        // Build connect flags
+        var connectFlags = Mqtt.ConnectFlagCleanStart // Starting with a clean session. As this is just a plain listener, we won't use a will!
+
+        if (self.userName != nil) {
+            connectFlags |= Mqtt.ConnectFlagUseUserName
+        }
+
+        if (self.password != nil) {
+            connectFlags |= Mqtt.ConnectFlagUsePassword
+        }
+
+        var parts: [MessageData] = [
+            try StringEncoder.encodeString(Mqtt.ProtocolName),
+            [
+                Mqtt.ProtocolVersion,
+                connectFlags,
+
+                0b0000_0000, // Keepalive MSB,
+                0b0000_0000, // Keepalive LSB
+
+                0x0000_0000, // Property-length (0 as no properties are set) but necessary for MQTT5
+            ],
+
+            try StringEncoder.encodeString(self.clientId) // Begin of payload
+        ]
+
+        if (self.userName != nil) {
+            try parts.append(StringEncoder.encodeString(self.userName!))
+        }
+
+        if (self.password != nil) {
+            try parts.append(StringEncoder.encodeString(self.password!))
+        }
+
+        try self.client.send(MessageEncoder.encodeMessageFromParts(controlPacketType: Mqtt.ControlPacketTypeConnect, parts))
+    }
+
+    public func subscribe(topic: String) throws
+    {
+        if (topic.isEmpty) {
+            throw MqttFormatError.emptyTopic
+        }
+
+        let parts: [MessageData] = [
+            [
+                0b0000_0000, // Packet identifier (MSB). We use this to recognize the ACK later. We also choose the identifier ourselves!
+                0b0000_1110, // Packet identifier (LSB)
+
+                0b0000_0000, // Properties length. As we dont use them, its 0
+            ],
+            try StringEncoder.encodeString(topic),
+            [
+                0b0000_0110, // Subscription options
+            ]
+        ]
+        try self.client.send(MessageEncoder.encodeMessageFromParts(controlPacketType: Mqtt.ControlPacketTypeSubscribe, parts))
+    }
+
+    public func disconnect()
+    {
+        let data = Data([
+            UInt8(Mqtt.ControlPacketTypeDisconnect),
+            0b0000_0010, // Remaining length
+
+            UInt8(Mqtt.DisconnectionReasonCodeNormal), // Reason code -> normal disconnection
+
+            0b0000_0000, // Properties length (empty, therefore 0)
+        ])
+
+        try! self.client.send(data)
+        try! self.client.disconnect()
+    }
+
+    public static func generateClientId() -> String
+    {
+        var clientId = "MqttListener"
+
+        for _ in clientId.count..<Mqtt.ClientIdMaxLength {
+            clientId.append(Mqtt.ClientIdValidChars.randomElement()!)
+        }
+
+        return clientId
     }
 
     private func onData(_ data: Data) -> Void
     {
         do {
-            let convertedData = MqttFormatService.dataToIntArray(data)
-            let messages = try MqttFormatService.extractMessagesFromData(data: convertedData)
+            let convertedData = MqttClient.convertDataToMessageData(data)
+            let messages = try MessageEncoder.extractMessagesFromData(convertedData)
 
             for message in messages {
                 self.onMqttMessage(message)
@@ -44,7 +130,7 @@ class MqttClient
         }
     }
 
-    private func onMqttMessage(_ message: [Int])
+    private func onMqttMessage(_ message: Message)
     {
         let controlPacketIdentifier = message[0]
 
@@ -60,7 +146,7 @@ class MqttClient
         }
     }
 
-    private func handleSubAck(_ data: [Int])
+    private func handleSubAck(_ data: Message)
     {
         /*
             0b1001_0000 // SUBACK
@@ -83,7 +169,7 @@ class MqttClient
         }
     }
 
-    private func handleConnAck(_ data: [Int])
+    private func handleConnAck(_ data: Message)
     {
         /*
             0b0010_0000 // Type CONNACK
@@ -111,7 +197,7 @@ class MqttClient
         }
     }
 
-    private func handlePublish(_ data: [Int])
+    private func handlePublish(_ data: Message)
     {
         /*
             0b0011_DQQR // D = is duplicate (server -> client always 0), QQ = QoS, R = retain
@@ -141,7 +227,7 @@ class MqttClient
             dataStart += 2
         }
 
-        let topic = MqttFormatService.decodeString(Array(data[2..<topicLength + 4]))
+        let topic = StringEncoder.decodeString(Array(data[2..<topicLength + 4]))
         let payload = Array(data[dataStart..<data.count])
 
         if (self.onMessageHandler != nil) {
@@ -149,78 +235,10 @@ class MqttClient
         }
     }
 
-    public func connect() throws
+    private static func convertDataToMessageData(_ data: Data) -> MessageData
     {
-        // Build connect flags
-        var connectFlags = Mqtt.ConnectFlagCleanStart // Starting with a clean session. As this is just a plain listener, we won't use a will!
-
-        if (self.userName != nil) {
-            connectFlags |= Mqtt.ConnectFlagUseUserName
+        return data.map { (value) -> Int in
+            Int(value)
         }
-
-        if (self.password != nil) {
-            connectFlags |= Mqtt.ConnectFlagUsePassword
-        }
-
-        var parts: [[Int]] = [
-            try MqttFormatService.encodeString(Mqtt.ProtocolName),
-            [
-                Mqtt.ProtocolVersion,
-                connectFlags,
-
-                0b0000_0000, // Keepalive MSB,
-                0b0000_0000, // Keepalive LSB
-
-                0x0000_0000, // Property-length (0 as no properties are set) but necessary for MQTT5
-            ],
-
-            try MqttFormatService.encodeString(self.clientId) // Begin of payload
-        ]
-
-        if (self.userName != nil) {
-            try parts.append(MqttFormatService.encodeString(self.userName!))
-        }
-
-        if (self.password != nil) {
-            try parts.append(MqttFormatService.encodeString(self.password!))
-        }
-
-        try self.client.send(MqttFormatService.convertMessageToData(controlPacketType: Mqtt.ControlPacketTypeConnect, data: parts))
-    }
-
-    public func subscribe(topic: String) throws
-    {
-        if (topic.isEmpty) {
-            throw MqttError.emptyTopic
-        }
-
-        let parts: [[Int]] = [
-            [
-                0b0000_0000, // Packet identifier (MSB). We use this to recognize the ACK later. We also choose the identifier ourselves!
-                0b0000_1110, // Packet identifier (LSB)
-
-                0b0000_0000, // Properties length. As we dont use them, its 0
-            ],
-            try MqttFormatService.encodeString(topic),
-            [
-                0b0000_0110, // Subscription options
-            ]
-        ]
-        try self.client.send(MqttFormatService.convertMessageToData(controlPacketType: Mqtt.ControlPacketTypeSubscribe, data: parts))
-    }
-
-    public func disconnect()
-    {
-        let data = Data([
-            UInt8(Mqtt.ControlPacketTypeDisconnect),
-            0b0000_0010, // Remaining length
-
-            UInt8(Mqtt.DisconnectionReasonCodeNormal), // Reason code -> normal disconnection
-
-            0b0000_0000, // Properties length (empty, therefore 0)
-        ])
-
-        try! self.client.send(data)
-        try! self.client.disconnect()
     }
 }

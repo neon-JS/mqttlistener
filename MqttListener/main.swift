@@ -13,7 +13,7 @@ func main()
         let port: NWEndpoint.Port = NWEndpoint.Port(rawValue: UInt16(config.port))!
         let networkClient = NetworkClient(host: host, port: port)
 
-        let clientId = MqttFormatService.generateClientId()
+        let clientId = MqttClient.generateClientId()
         let mqttClient = MqttClient(client: networkClient, clientId: clientId, userName: config.userName, password: config.password)
         mqttClient.setOnMessageHandler { (topic, data) in
             let dataString = String(data.map { (byte) -> Character in
