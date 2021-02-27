@@ -75,6 +75,8 @@ class MqttClient
             throw MqttFormatError.emptyTopic
         }
 
+        let subscriptionOptions = Mqtt.SubscribeOptionFlagQoS2 | Mqtt.SubscribeOptionNoLocale | Mqtt.SubscribeOptionRetainedMessageOnlyOnNewSubscription;
+
         let parts: [MessageData] = [
             [
                 0b0000_0000, // Packet identifier (MSB). We use this to recognize the ACK later. We also choose the identifier ourselves!
@@ -84,7 +86,7 @@ class MqttClient
             ],
             try StringEncoder.encodeString(topic),
             [
-                0b0000_0110, // Subscription options
+                subscriptionOptions,
             ]
         ]
         try self.client.send(MessageEncoder.encodeMessageFromParts(controlPacketType: Mqtt.ControlPacketTypeSubscribe, parts))
@@ -173,17 +175,20 @@ class MqttClient
             return
         }
 
-        let payloadIndex = Int(5 + data[4])
+        let statusPayloadIndex = try! MessageEncoder.getFirstDataByteIndex(data) // Offset by header and remaining length
+            + 2 // Offset by packet identifier
+            + IntegerEncoder.decodeVariableByteInteger(Array(data[4...])) // Properties length that we'll ignore
+            + MessageEncoder.getEncodedIntegerLength(data[4...]) // Length of properties length itself
 
-        if (data.count <= payloadIndex) {
+        if (data.count <= statusPayloadIndex) {
             DebugService.log("Discarding SUBACK as message seems to be malformed.")
             DebugService.printBinaryData(data)
             return
         }
 
-        if (data[payloadIndex] >= 0b1000_0000) {
+        if (data[statusPayloadIndex] >= 0b1000_0000) {
             // Payload contains status-code. Every status-code >= 128 indicates an error.
-            DebugService.error("Status code indicates an error during SUBACK. Code: \(data[payloadIndex])")
+            DebugService.error("Status code indicates an error during SUBACK. Code: \(data[statusPayloadIndex])")
         }
     }
 
@@ -206,18 +211,22 @@ class MqttClient
 
         DebugService.log("Got CONNACK")
 
-        if (data.count < 4) {
+        let connackFlagIndex = try! MessageEncoder.getFirstDataByteIndex(data)
+        let reasonCodeIndex = connackFlagIndex + 1;
+
+        if (data.count <= reasonCodeIndex) {
             DebugService.log("Discarding CONNACK as message seems to be malformed.")
             DebugService.printBinaryData(data)
             return
         }
 
-        if (data[2] != 0b0000_0000) {
-            DebugService.log("Using resumed session during CONNACK")
+        if (data[reasonCodeIndex] != Mqtt.ConnackReasonCodeSuccess) {
+            DebugService.error("Status code indicates an error during CONNACK. Code: \(data[reasonCodeIndex])")
+            return
         }
 
-        if (data[3] != 0b0000_0000) {
-            DebugService.error("Status code indicates an error during CONNACK. Code: \(data[3])")
+        if (data[connackFlagIndex] == Mqtt.ConnackFlagSessionPresent) {
+            DebugService.log("Using present session during CONNACK")
         }
     }
 
@@ -243,27 +252,31 @@ class MqttClient
 
         DebugService.log("Got PUBLISH")
 
-        if (data.count < 4) {
+        let topicLengthIndex = try! MessageEncoder.getFirstDataByteIndex(data);
+
+        if (data.count <= topicLengthIndex + 1) {
             DebugService.log("Discarding PUBLISH as message seems to be malformed.")
             DebugService.printBinaryData(data)
             return
         }
 
-        var dataStart = Int(data[2] << 8 + data[3]) + 4
+        var dataStartIndex = topicLengthIndex + 2 // Start of the topic-name
+            + Int(data[topicLengthIndex] << 8 + data[topicLengthIndex + 1]) // Length of the topic-name
+
         if (data[0] & 0b0000_0110 != 0) {
-            // QoS > 0
-            dataStart += 2
+            // Packet identifier present because QoS > 0
+            dataStartIndex += 2
         }
 
-        if (data.count <= dataStart) {
+        if (data.count <= dataStartIndex) {
             DebugService.log("Discarding PUBLISH as message seems to be malformed.")
             DebugService.printBinaryData(data)
             return
         }
 
         do {
-            let topic = try StringEncoder.decodeString(Array(data[2...]))
-            let payload = Array(data[dataStart...])
+            let topic = try StringEncoder.decodeString(Array(data[topicLengthIndex...]))
+            let payload = Array(data[dataStartIndex...])
 
             if (self.onMessageHandler != nil) {
                 self.onMessageHandler!(topic, payload)

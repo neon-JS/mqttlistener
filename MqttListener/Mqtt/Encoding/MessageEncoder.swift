@@ -43,7 +43,12 @@ class MessageEncoder
         return messages
     }
 
-    private static func getEncodedIntegerLength(_ data: ArraySlice<Int>) throws -> Int
+    public static func getFirstDataByteIndex(_ data: Message) throws -> Int
+    {
+        return try MessageEncoder.getEncodedIntegerLength(data[1...]) + 1
+    }
+
+    public static func getEncodedIntegerLength(_ data: ArraySlice<Int>) throws -> Int
     {
         for (index, byte) in data.enumerated() {
             if (byte & Mqtt.VariableByteIntegerContinuationBit == 0) {

@@ -17,6 +17,16 @@ class Mqtt
     public static let ConnectFlagUseUserName = 0b1000_0000
     public static let ConnectFlagUsePassword = 0b0100_0000
 
+    public static let ConnackReasonCodeSuccess  = 0b0000_0000;
+    public static let ConnackFlagSessionPresent = 0b0000_0001;
+
+    public static let SubscribeOptionFlagQoS1                                 = 0b0000_0001;
+    public static let SubscribeOptionFlagQoS2                                 = 0b0000_0010;
+    public static let SubscribeOptionNoLocale                                 = 0b0000_0100;
+    public static let SubscribeOptionRetainAsPublished                        = 0b0000_1000;
+    public static let SubscribeOptionRetainedMessageOnlyOnNewSubscription     = 0b0001_0000;
+    public static let SubscribeOptionRetainedMessageOnNewSubscriptionDisabled = 0b0010_0000;
+
     public static let VariableIntegerMaxSize = 0xFFFF_FF7F
     public static let Utf8StringMaxByteSize  = 0b1111_1111_1111_1111
 
